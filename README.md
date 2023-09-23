@@ -42,4 +42,4 @@ This is a mining bot script that allows you to mine anywhere in OSRS with ease a
 ### Disclaimer
 - This bot script is for educational purposes only and should not be used to gain an unfair advantage in OSRS. Use it at your own risk.
 - This bot script is not affiliated with or endorsed by Jagex, the developer of OSRS.
-- This bot script may not work with future updates of OSRS or RuneLite. Please check for updates regularly.
+- This bot script may not work with future updates of OSRS. Please check for updates regularly.
