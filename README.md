@@ -3,7 +3,7 @@
 # S1mpleMiner – Powermine Anywhere In OSRS!
 ## 2023 FREE Old School Runescape Mining Bot – Simba
 
-This is a mining bot script that allows you to mine anywhere in OSRS with ease and speed using Simba and the Legacy Client. It automatically drops what is mined, while emulating real player’s behaviour, fatigue, and breaking at different mining locations. It is a simple, efficient, and safe solution for gaining mining levels.
+This is a mining bot script that allows you to mine anywhere in OSRS with ease and speed using Simba and the Legacy Java Client. It automatically drops what is mined, while emulating real player’s behaviour, fatigue, and breaking at different mining locations. It is a simple, efficient, and safe solution for gaining mining levels.
 
 ### Features
 - Intelligent Resource Management: The script automatically drops only the mined items, optimizing inventory space.
