@@ -1,4 +1,4 @@
-![BANNER](https://github.com/S1mple-Scripts/S1mpleMiner/assets/144496153/b6ffff18-778e-4bef-b05e-183d85a5dda8)
+![BANNER2](https://github.com/S1mple-Scripts/S1mpleMiner/assets/144496153/01d9e30e-bb0b-4495-96d9-26ed4e7026d2)
 
 # S1mpleMiner – Powermine Anywhere In OSRS!
 ## 2023 FREE Old School Runescape Mining Bot – Simba
