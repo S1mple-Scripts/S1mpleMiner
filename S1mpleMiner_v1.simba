@@ -1,0 +1,566 @@
+program S1mpleMiner;
+{$DEFINE SRL_USE_REMOTEINPUT}
+{$I SRL-T/osr.simba}
+{$I WaspLib/osr.simba}
+
+const
+  Local_Version := 1.0;
+
+{Script Settings Below – YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
+{User Settings}
+  RunTimeMinutes = (240);
+  // How long should the script run for?
+  UserLogin = '';
+  // What username do you log in with?
+  UserPassword = '';
+  // What password do you enter?
+  CameraAngleLow = False;
+  // Do you want your view to be low or high? !!Must be the same as when you setup the script!!
+  CompassDirection = 'North';
+  // What compass direction do you want? !!Must be the same as when you setup the script!!
+  // 'North'
+  // 'West'
+  // 'South'
+  // 'East'
+{You can slightly adjust these to decrease bot fingerprinting}
+  MouseSpeed = (21);
+  MouseGravity = (15);
+  MouseWind = (3);
+
+{Rock Timer Settings}
+  LowWait = 4000;
+  // Average time to mine your rock
+  HighWait = 9000;
+  // 5 seconds longer than the average time to mine your rock
+{Script Settings Above– YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
+{}
+{}
+{}
+{}
+{}
+{################################# DO NOT #################################}
+{################################# MODIFY #################################}
+{################################ ANYTHING ################################}
+{################################# BELOW! #################################}
+{################## *unless you know what you are doing* ##################}
+{}
+{}
+{}
+{}
+{}
+type
+  TReactionTimes = record
+    MinTime: Integer;
+    MaxTime: Integer;
+  end;
+
+var
+  TimeUp, FirstLogin, MustWait: Boolean;
+  RunTimeConverted, RockTracker, OreSlot, WrongRock, RockStolen, InvCount: Int32;
+  RunTimer, FailsafeTimer: TStopWatch;
+  MSPoint1, MSPoint2: TPoint;
+  MousePositions: Boolean;
+  CurrentBlockEnd: TDateTime;
+  CurrentReactionTimes: TReactionTimes;
+  RockUpText, EmptyRockUpText: String;
+
+{#######}
+  ShortMinWait: Integer = 106;
+  ShortMaxWait: Integer = 196;
+  LongMinWait: Integer = 127;
+  LongMaxWait: Integer = 777;
+  AvgMinWait: Integer = 127;
+  AvgMaxWait: Integer = 267;
+
+procedure TMM2MS.Setup; override;
+begin
+  Self.Name := 'MM2MS';
+  //Self.ZoomLevel := 100;
+end;
+
+procedure TMouse.Setup; override;
+begin
+  Self.Name := 'Mouse';
+  Self.Speed := MouseSpeed + RandomRange(- 1, 1);
+  Self.Gravity := MouseGravity + RandomRange(- 2, 2);
+  Self.Wind := MouseWind + RandomRange(- 2, 2);
+  Self.MissChance := RandomRange(5, 15);
+  Self.Distribution := MOUSE_DISTRIBUTION_GAUSS;
+  Self.CanIdle := True;
+{$IFDEF SRL_DEBUG_MOUSE}
+  Self.OnTeleport := @ Self._DebugCallback;
+{$ENDIF}
+end;
+
+procedure TKeyboard.Send(const Text: String); override;
+begin
+  Self.Send(Text, Random(40, 260), Random(32, 160), Random(40, 285));
+end;
+
+procedure TKeyboard.Send(const Text: String; KeyPressAfter: Integer); override;
+begin
+  Self.Send(Text);
+  Wait(35, 244, wdLeft);
+  Self.PressKey(KeyPressAfter);
+end;
+
+function TRSInventory.ClickSlot(Slot: Int32; Option: String = ''): Boolean; override;
+begin
+  if Self.MouseSlot(Slot) then
+  begin
+    if (Option <> '') then
+      Result := ChooseOption.Select(Option)
+    else
+    begin
+      Mouse.Click(MOUSE_LEFT);
+      case random(10) of
+        0 .. 7: Wait(RandomRange(0, 125));
+      end;
+      Result := True;
+    end;
+  end;
+end;
+
+procedure SetLowestPitch();
+begin
+  Keyboard.KeyDown(VK_UP);
+  try
+    for 1 to 10 do
+      // 2500ms timeout if (SRL.GetPixelShift(Mainscreen.Bounds(), 250) / Mainscreen.Bounds.Area() * 100) < 10 then
+      // less than 10% of the screen changed in 250ms Break;
+  finally
+    Keyboard.KeyUp(VK_UP);
+  end;
+end;
+
+{Modified HoverSlot function that adds chance to miss slot – Useful for blind hovering}
+function TRSInventory.HoverSlotS1mple(Slot: Int32): Boolean;
+var
+  ChanceToMiss: Int32;
+  SlotBox: TBox;
+  MissedPoint: TPoint;
+begin
+  Result := Self.IsOpen();
+  if Result then
+  begin
+    ChanceToMiss := Random(100);
+    SlotBox := Self.GetSlotBox(Slot);
+    if ChanceToMiss < 25 then
+      // % chance to miss the slot
+      begin
+        // Generate a point near the slot to move to
+        MissedPoint.x := SlotBox.x1 + RandomRange(- 3, 5);
+        // Adjust the range as needed
+        MissedPoint.y := SlotBox.y1 + RandomRange(- 3, 5);
+        // Adjust the range as needed
+        Mouse.Move(MissedPoint);
+        // Retry with a greater chance to succeed
+        ChanceToMiss := Random(100);
+        if ChanceToMiss < 90 then
+          // % chance to hit the slot on retry
+          begin
+            Wait(RandomRange(11, 33));
+            Mouse.Move(SlotBox);
+          end;
+      end
+    else
+      Mouse.Move(SlotBox);
+  end;
+end;
+
+procedure S1mpleUserCompass(CompassDirection: String);
+var
+  CompassDegree: Integer;
+begin
+  if CompassDirection = 'North' then
+    CompassDegree := 0;
+  if CompassDirection = 'East' then
+    CompassDegree := - 90;
+  if CompassDirection = 'South' then
+    CompassDegree := 180;
+  if CompassDirection = 'West' then
+    CompassDegree := 90;
+  if Minimap.GetCompassAngle() <> CompassDegree then
+    Minimap.SetCompassAngle(CompassDegree);
+end;
+
+procedure S1mpleLogin();
+begin
+  WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleLogin(): Running...(only if needed)');
+  Login.AddPlayer(UserLogin, UserPassword);
+  if Login.IsOpen then
+    Login.LoginPlayer();
+  if not Inventory.IsOpen then
+    Inventory.Open;
+  S1mpleUserCompass(CompassDirection);
+  if CameraAngleLow = False then
+    Mainscreen.SetHighestPitch()
+  else
+    SetLowestPitch();
+end;
+
+{This procedure prints script information and credits.}
+procedure S1mplePaint();
+const
+  BORDER = '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~';
+  THANKS = '~~~~~~~~~~~~~Thank you for using S1mpleMiner~~~~~~~~~~~~';
+  MADE_FOR = '~~~~~~~~~~~~~~Made for the Simba Community~~~~~~~~~~~~~~';
+  CREATED_BY = '~~~~~~~~~~~~~~Created by S1mple Scripts :)~~~~~~~~~~~~~~';
+begin
+  WriteLn(BORDER);
+  WriteLn(THANKS);
+  WriteLn(BORDER);
+  WriteLn(MADE_FOR);
+  WriteLn(BORDER);
+  WriteLn(CREATED_BY);
+  WriteLn(BORDER);
+end;
+
+{Procedure to terminate the script}
+procedure S1mpleTerminate();
+begin
+  WriteLn([(Time)], 'S1mpleMining: Terminating script');
+  if IsKeyDown(VK_Shift) then
+    KeyUP(VK_SHIFT);
+  case random(3) of
+    1: Logout.ClickLogout;
+  end;
+  EIOS_SetMouseInputEnabled(RSClient.RemoteInput.EIOS, True);
+  TerminateScript;
+end;
+
+{Procedure to move the mouse cursor randomly within a specified range}
+procedure S1mpleRandomMouse(Min, Max, WaitA, WaitB: Integer; Chance: Double);
+var
+  Mousey: TPoint;
+  // Variable to store the current mouse position
+  RunChance: Double;
+  // Variable to store the random chance value
+begin
+  RunChance := Random;
+  // Generate a random number between 0 and 1
+  // If the generated random number is less than or equal to the specified chance
+  if RunChance <= Chance then
+  begin
+    WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleRandomMouse(): Running');
+    Mousey := Mouse.Position();
+    // Get the current mouse position
+    // Add a random offset to the x and y coordinates of the mouse position
+    Mousey.x := Mousey.x + RandomRange(Min, Max);
+    Mousey.y := Mousey.y + RandomRange(Min, Max);
+    Mouse.Miss(Mousey);
+    // Move the mouse to the new position
+    // Wait for a random duration between WaitA and WaitB milliseconds
+    Wait(RandomRange(WaitA, WaitB));
+  end;
+  exit;
+  // Exit the procedure
+end;
+
+{Procedure to handle failsafe conditions}
+procedure S1mpleFailsafe(Failsafe: Int32);
+begin
+  WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleFailsafe(): Running');
+  // Increment the failsafe counter
+  inc(Failsafe);
+  // If this is the first failsafe event, start the failsafe timer
+  if Failsafe = 1 then
+    FailsafeTimer.Start;
+  // If the failsafe timer has been running for more than 5 minutes (300000 ms) and there have been at least 20 failsafe events
+  if (FailsafeTimer.ElapsedTime() >= 300000) and (Failsafe >= 10) then
+  begin
+    // Terminate the script
+    WriteLn([(Time)], 'S1mpleMiner: Failsafe activated');
+    // Reset the failsafe counter and timer
+    Failsafe := 0;
+    FailsafeTimer.Reset;
+    S1mpleTerminate();
+  end
+  // If the failsafe timer has been running for more than 5 minutes but there have been less than 20 failsafe events
+  else if (FailsafeTimer.ElapsedTime() >= 300000) and (Failsafe < 10) then
+  begin
+    // Reset the failsafe counter and timer without terminating the script
+    Failsafe := 0;
+    FailsafeTimer.Reset;
+  end;
+end;
+
+{Procedure to calculate reaction times}
+procedure S1mpleReaction(out ReactionTimes: TReactionTimes);
+var
+  CurrentTime, BlockLength: UInt64;
+begin
+  // Get the current time in milliseconds
+  CurrentTime := RunTimer.ElapsedTime();
+  // If the current time is within the current block
+  if (CurrentTime < CurrentBlockEnd) then
+  begin
+    // Use the current reaction times
+    ReactionTimes := CurrentReactionTimes;
+    Exit;
+    // Exit the procedure
+  end;
+  WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleReaction(): Running');
+  // Calculate the length of the next block based on a random number (converted to milliseconds)
+  case Random(5) of
+    0: BlockLength := RandomRange(5 * 60000, 6 * 60000);
+    1: BlockLength := RandomRange(15 * 60000, 16 * 60000);
+    2: BlockLength := RandomRange(30 * 60000, 31 * 60000);
+    3: BlockLength := RandomRange(60 * 60000, 61 * 60000);
+    else
+      BlockLength := RandomRange(180 * 60000, 181 * 60000);
+  end;
+  // Calculate the end of the next block
+  CurrentBlockEnd := RunTimer.ElapsedTime() + BlockLength;
+  // Calculate the minimum and maximum reaction times based on the length of the block and a random number
+  if (BlockLength < 16 * 60000) then
+    if (Random > 0.5) then
+    begin
+      CurrentReactionTimes.MinTime := Random(ShortMinWait);
+      CurrentReactionTimes.MaxTime := CurrentReactionTimes.MinTime + Random(ShortMaxWait - ShortMinWait);
+    end
+  else
+  begin
+    CurrentReactionTimes.MinTime := Random(LongMinWait);
+    CurrentReactionTimes.MaxTime := CurrentReactionTimes.MinTime + Random(LongMaxWait - LongMinWait);
+  end
+  else
+  begin
+    CurrentReactionTimes.MinTime := Random(AvgMinWait);
+    CurrentReactionTimes.MaxTime := CurrentReactionTimes.MinTime + Random(AvgMaxWait - AvgMinWait);
+  end;
+  // Use the calculated reaction times
+  ReactionTimes := CurrentReactionTimes;
+end;
+
+{Procedure to wait for a random duration based on calculated reaction times}
+procedure S1mpleReactionWait();
+var
+  ReactionTimes: TReactionTimes;
+  // Variable to store the calculated reaction times
+begin
+  // Calculate the reaction times
+  S1mpleReaction(ReactionTimes);
+  // Wait for a random duration between the minimum and maximum reaction times
+  Wait(RandomRange(ReactionTimes.MinTime, ReactionTimes.MaxTime));
+end;
+
+procedure S1mpleBreak();
+var
+  BreakLength, ScriptRunTime, hours1, minutes1, seconds1: UInt64;
+  BreakChance: Double;
+  BreakLengthConverted: String;
+begin
+  // Get run time in milliseconds
+  ScriptRunTime := RunTimer.ElapsedTime();
+  // Only break if it's run for more than 60-90 minutes (converted to milliseconds)
+  if ScriptRunTime < RandomRange(60 * 60000, 90 * 60000) then
+    Exit;
+  // Chance of 1/200 to break
+  BreakChance := Random(200);
+  if BreakChance = 1 then
+  begin
+    WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleBreak(): Running');
+    // Break for a random time between a tenth and a half of the run time
+    BreakLength := RandomRange(ScriptRunTime div 10, ScriptRunTime div 2);
+    Logout.ClickLogout;
+    hours1 := BreakLength div 3600000;
+    minutes1 := (BreakLength mod 3600000) div 60000;
+    seconds1 := ((BreakLength mod 3600000) mod 60000) div 1000;
+    BreakLengthConverted := IntToStr(hours1) + 'Hr/s ' + IntToStr(minutes1) + 'Min/s ' + IntToStr(seconds1) + 'Sec/s';
+    WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleBreak(): Breaking for: ', BreakLengthConverted);
+    Wait(BreakLength);
+    S1mpleLogin();
+  end;
+end;
+
+{This procedure handles the dropping action in the game.}
+procedure S1mpleDrop();
+begin
+  if login.IsOpen then
+    exit;
+  if not Inventory.IsOpen then
+    Inventory.Open;
+  WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleDrop(): Running');
+  S1mpleReactionWait();
+  Inventory.HoverSlotS1mple(OreSlot);
+  Inventory.WaitCount(OreSlot + 1, RandomRange(LowWait, HighWait));
+  if Inventory.Count() < (OreSlot + 1) then
+  begin
+    S1mpleFailsafe(RockStolen);
+    exit;
+  end
+  else
+    inc(RockTracker);
+  KeyDown(VK_SHIFT);
+  S1mpleReactionWait();
+  while Inventory.IsSlotUsed(OreSlot) do
+  begin
+    Inventory.ClickSlot(OreSlot);
+    Inventory.WaitCount(OreSlot, RandomRange(LowWait, HighWait));
+  end;
+  while Inventory.IsSlotUsed(OreSlot + 1) do
+  begin
+    Inventory.ClickSlot(OreSlot + 1);
+    Inventory.WaitCount(OreSlot + 1, RandomRange(LowWait, HighWait));
+  end;
+  KeyUp(VK_SHIFT);
+  Wait(33, 77, wdLeft);
+  if IsKeyDown(VK_Shift) then
+    KeyUP(VK_SHIFT);
+  exit;
+end;
+
+{Procedure to record the mouse position when certain conditions are met}
+procedure S1mpleScriptSetup(var MSPoint1, MSPoint2: TPoint);
+var
+  x, y, x2, y2, i, j: Int32;
+begin
+  WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleScriptSetup(): Running');
+  // Wait until a red click is detected on the main screen or a specific text appears
+  OreSlot := Inventory.Count();
+  // Record the current mouse position
+  for i := 5 downto 1 do
+  begin
+    WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleScriptSetup(): QUICK! ' + IntToStr(i) + ' seconds! - Move mouse to middle of rock & WAIT for click');
+    Wait(1000);
+    EIOS_GetRealMousePosition(RSClient.RemoteInput.EIOS, x, y);
+    MSPoint1 := Point(x, y);
+    Mouse.Move(MSPoint1);
+  end;
+  // Record the current up text for rock to mine
+  RockUpText := Mainscreen.GetUpText();
+  Mouse.Click(MOUSE_LEFT);
+  // Record the current up text for rock to mine when empty
+  Inventory.WaitCount(OreSlot + 1, RandomRange(40000, 60000));
+  wait(500);
+  EmptyRockUpText := Mainscreen.GetUpText();
+  InvCount := Inventory.Count();
+  wait(1000);
+  for j := 5 downto 1 do
+  begin
+    WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleScriptSetup(): QUICK! ' + IntToStr(j) + ' seconds! - Move mouse to middle of rock & WAIT for click');
+    Wait(1000);
+    EIOS_GetRealMousePosition(RSClient.RemoteInput.EIOS, x2, y2);
+    MSPoint2 := Point(x2, y2);
+    Mouse.Move(MSPoint2);
+  end;
+  // Record the current up text for rock to mine
+  // Indicate that the mouse positions have been recorded
+  MousePositions := True;
+  WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleScriptSetup(): Please do not interact with the client...');
+  WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleScriptSetup(): ...until the script is finished!');
+  Wait(RandomRange(333, 999));
+  S1mpleDrop();
+end;
+
+{This procedure handles the mining action in the game.}
+procedure S1mpleMine();
+var
+  RandomPoint1, RandomPoint2: TPoint;
+begin
+  if MousePositions = False then
+    S1mpleScriptSetup(MSPoint1, MSPoint2);
+  RandomPoint1 := [MSPoint1.X + RandomRange(- 25, 26), MSPoint1.Y + RandomRange(- 26, 25)];
+  RandomPoint2 := [MSPoint2.X + RandomRange(- 26, 25), MSPoint2.Y + RandomRange(- 25, 26)];
+  WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleMine(): Running');
+  Mouse.Move(RandomPoint1);
+  InvCount := Inventory.Count();
+  if Mainscreen.IsUpText(EmptyRockUpText) or Mainscreen.IsUpText(RockUpText) then
+  begin
+    while MainScreen.IsUpText(EmptyRockUpText) do
+      S1mpleReactionWait();
+    InvCount := Inventory.Count();
+    if Mainscreen.IsUpText(RockUpText) then
+    begin
+      Mouse.Click(MOUSE_LEFT);
+      if Mainscreen.DidRedClick then
+      begin
+        S1mpleRandomMouse(- 20, 22, 0, 112, 0.1);
+        S1mpleReactionWait();
+        S1mpleDrop();
+        Mouse.Move(RandomPoint2);
+      end;
+    end;
+  end
+  else
+  begin
+    Wait(RandomRange(1000, 3000));
+    S1mpleFailsafe(WrongRock);
+    exit;
+  end;
+  if Mainscreen.IsUpText(EmptyRockUpText) or Mainscreen.IsUpText(RockUpText) then
+  begin
+    while MainScreen.IsUpText(EmptyRockUpText) do
+      S1mpleReactionWait();
+    InvCount := Inventory.Count();
+    if Mainscreen.IsUpText(RockUpText) then
+    begin
+      Mouse.Click(MOUSE_LEFT);
+      if Mainscreen.DidRedClick then
+      begin
+        S1mpleRandomMouse(- 20, 22, 0, 112, 0.1);
+        S1mpleReactionWait();
+        S1mpleDrop();
+      end;
+    end;
+  end
+  else
+  begin
+    Wait(RandomRange(1000, 3000));
+    S1mpleFailsafe(WrongRock);
+    exit;
+  end;
+  WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleMiner: Total ', (RockUpText), ' mined: ', (RockTracker));
+  exit;
+end;
+
+{This procedure sets up the initial state of the script.}
+procedure S1mpleSetup();
+begin
+  WriteLn([(Time)], 'S1mpleMiner: Running');
+  //EIOS_SetMouseInputEnabled(RSClient.RemoteInput.EIOS, False);
+  WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleSetup(): Running');
+  FirstLogin := True;
+  MousePositions := False;
+  MustWait := False;
+  ClearDebug();
+  S1mplePaint();
+  RunTimeConverted := (RunTimeMinutes * 60000 + RandomRange(- 10000, 10000));
+  RunTimer.Start;
+end;
+
+{This procedure executes the main loop of the script.}
+procedure S1mpleLoop();
+begin
+  if RunTimer.ElapsedTime() >= (RunTimeConverted) then
+    TimeUp := True;
+  S1mpleLogin();
+  S1mpleMine();
+  S1mpleBreak();
+end;
+
+{This procedure handles the shutdown of the script.}
+procedure S1mpleShutdown();
+begin
+  if TimeUp = True then
+  begin
+    S1mplePaint();
+    WriteLn([(Time)], 'S1mpleMiner: Completed RunTime - Shutting down');
+    WriteLn([(Time)], 'S1mpleMiner: RunTime was ', (RunTimer.ElapsedTime() / 60000), ' minutes');
+    WriteLn([(Time)], 'S1mpleMiner: Total', (RockUpText), ' mined: ', (RockTracker));
+    if IsKeyDown(VK_Shift) then
+      KeyUP(VK_SHIFT);
+    Logout.ClickLogout;
+  end
+  else
+    WriteLn([(Time)], 'S1mpleMiner: Shutting down - RunTime incomplete');
+end;
+
+begin
+  S1mpleSetup();
+  repeat
+    S1mpleLoop();
+  until (TimeUp = True);
+  S1mpleShutdown();
+end.
