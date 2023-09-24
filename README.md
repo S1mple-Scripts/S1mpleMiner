@@ -23,8 +23,6 @@ This is a mining bot script that allows you to mine anywhere in OSRS with ease a
 - To learn how to setup the bot properly watch this video [here](https://youtu.be/Mpsp5wEUsPc?feature=shared).
 
 ### Proggies
-[30 Minute Timelapse of S1mpleFisher on Youtube](https://www.youtube.com/watch?v=pnJPGgosMSs)
-![S1mpleFisher 10Hr Proggy Small](https://github.com/S1mple-Scripts/S1mpleFisher/assets/144496153/8d63939d-b477-4be4-934c-55ab3d77aa64)
 
 ### Disclaimer
 - This bot script is for educational purposes only and should not be used to gain an unfair advantage in OSRS. Use it at your own risk.
