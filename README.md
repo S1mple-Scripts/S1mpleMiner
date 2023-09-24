@@ -20,7 +20,7 @@ This is a mining bot script that allows you to mine anywhere in OSRS with ease a
 - The required items and levels depending on the mining method you are using.
 
 ### Script Setup
-- Watch this video [here](https://youtu.be/Mpsp5wEUsPc?feature=shared) for a detailed script setup tutorial.
+- To learn how to setup the bot properly watch this video [here](https://youtu.be/Mpsp5wEUsPc?feature=shared).
 
 ### Proggies
 [30 Minute Timelapse of S1mpleFisher on Youtube](https://www.youtube.com/watch?v=pnJPGgosMSs)
