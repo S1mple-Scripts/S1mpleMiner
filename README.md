@@ -19,21 +19,8 @@ This is a mining bot script that allows you to mine anywhere in OSRS with ease a
 - An OSRS account. You can create an OSRS account from [here](https://oldschool.runescape.com/).
 - The required items and levels depending on the mining method you are using.
 
-### Installation
-- Download the latest version of the bot script from [here](https://github.com/S1mple-Scripts/S1mpleFisher/releases) and save the .simba file in your Simba scripts folder.
-- Run Simba and load the bot script.
-- Modify the script setup details in Simba on lines 8-35.
-- Run RuneLite, load the provided RuneLite Profile, and then log into your OSRS account.
-  - Modify the 'Custom Left Click' plugin to include ALL items that will fill up your inventory.
-  - Modify the 'NPC Indicators' plugin:
-    - Enable 'Highlight Hull'.
-    - Enable 'Highlight Tile'.
-    - Set 'Highlight Color' and 'Fill Color' to 'FFE7FF00'.
-    - Set 'NPCs to Highlight' to include the Up_Text of the fishing spot you are wanting to click.
-- You can watch the video [here](https://youtu.be/Mpsp5wEUsPc?feature=shared) to see a little bit of the recommended setup.
-  - * If you are having issues with opening the inventory please try using Resizable Classic. * 
-- Go to the fishing spot you want to fish at with the required fishing equipment in your inventory.
-- Start the bot script in Simba.
+### Script Setup
+- Watch this video [here](https://youtu.be/Mpsp5wEUsPc?feature=shared) for a detailed script setup tutorial.
 
 ### Proggies
 [30 Minute Timelapse of S1mpleFisher on Youtube](https://www.youtube.com/watch?v=pnJPGgosMSs)
