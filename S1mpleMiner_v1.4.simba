@@ -4,7 +4,7 @@ program S1mpleMiner;
 {$I WaspLib/osr.simba}
 
 const
-  Local_Version := 1.3;
+  Local_Version := 1.4;
 
 {Script Settings Below – YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {User Settings}
@@ -55,8 +55,8 @@ type
   end;
 
 var
-  TimeUp, FirstLogin, MustWait: Boolean;
-  RunTimeConverted, RockTracker, OreSlot, WrongRock, RockStolen, InvCount: Int32;
+  TimeUp, FirstLogin: Boolean;
+  RunTimeConverted, RockTracker, OreSlot, WrongRock, RockStolen, InvCount, BreakRestrict: Int32;
   RunTimer, FailsafeTimer: TStopWatch;
   MSPoint1, MSPoint2: TPoint;
   MousePositions: Boolean;
@@ -65,18 +65,12 @@ var
   RockUpText, EmptyRockUpText: String;
 
 {#######}
-  ShortMinWait: Integer = 106;
-  ShortMaxWait: Integer = 196;
-  LongMinWait: Integer = 127;
-  LongMaxWait: Integer = 777;
-  AvgMinWait: Integer = 127;
-  AvgMaxWait: Integer = 267;
-
-procedure TMM2MS.Setup; override;
-begin
-  Self.Name := 'MM2MS';
-  Self.ZoomLevel := 100;
-end;
+  ShortMinWait: Int32 = 106;
+  ShortMaxWait: Int32 = 196;
+  LongMinWait: Int32 = 127;
+  LongMaxWait: Int32 = 777;
+  AvgMinWait: Int32 = 127;
+  AvgMaxWait: Int32 = 267;
 
 procedure TMouse.Setup; override;
 begin
@@ -92,11 +86,13 @@ begin
 {$ENDIF}
 end;
 
+{Modified the waits between keypress to make it look more human}
 procedure TKeyboard.Send(const Text: String); override;
 begin
   Self.Send(Text, Random(40, 260), Random(32, 160), Random(40, 285));
 end;
 
+{Modified the wait between keypress to make it look more human}
 procedure TKeyboard.Send(const Text: String; KeyPressAfter: Integer); override;
 begin
   Self.Send(Text);
@@ -104,6 +100,7 @@ begin
   Self.PressKey(KeyPressAfter);
 end;
 
+{Modified the wait after click to make it look more human}
 function TRSInventory.ClickSlot(Slot: Int32; Option: String = ''): Boolean; override;
 begin
   if Self.MouseSlot(Slot) then
@@ -121,13 +118,14 @@ begin
   end;
 end;
 
+{Replica of SetHighestPitch() but opposite}
 procedure SetLowestPitch();
 begin
   Keyboard.KeyDown(VK_UP);
   try
     for 1 to 10 do
-      // 2500ms timeout if (SRL.GetPixelShift(Mainscreen.Bounds(), 250) / Mainscreen.Bounds.Area() * 100) < 10 then
-      // less than 10% of the screen changed in 250ms Break;
+      if (SRL.GetPixelShift(Mainscreen.Bounds(), 250) / Mainscreen.Bounds.Area() * 100) < 10 then
+        Break;
   finally
     Keyboard.KeyUp(VK_UP);
   end;
@@ -168,6 +166,7 @@ begin
   end;
 end;
 
+{More user friendly use of SetCompassAngle()}
 procedure S1mpleUserCompass(CompassDirection: String);
 var
   CompassDegree: Integer;
@@ -184,6 +183,7 @@ begin
     Minimap.SetCompassAngle(CompassDegree);
 end;
 
+{The login procedure}
 procedure S1mpleLogin();
 begin
   WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleLogin(): Running...(only if needed)');
@@ -197,6 +197,9 @@ begin
     Mainscreen.SetHighestPitch()
   else
     SetLowestPitch();
+  if FirstLogin = True then
+    Options.SetZoomLevel(100);
+  FirstLogin := False;
 end;
 
 {This procedure prints script information and credits.}
@@ -355,10 +358,10 @@ begin
   // Get run time in milliseconds
   ScriptRunTime := RunTimer.ElapsedTime();
   // Only break if it's run for more than 60-90 minutes (converted to milliseconds)
-  if ScriptRunTime < RandomRange(60 * 60000, 90 * 60000) then
+  if ScriptRunTime < BreakRestrict then
     Exit;
-  // Chance of 1/200 to break
-  BreakChance := Random(200);
+  // Chance of 1/333 to break
+  BreakChance := Random(333);
   if BreakChance = 1 then
   begin
     WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleBreak(): Running');
@@ -368,7 +371,7 @@ begin
     if BreakLength > 21600000 then
       BreakLength := 21600000;
     // Add some randomisation to the break length
-    RandomFactor := RandomRange(-30 * 60 * 1000, 30 * 60 * 1000); // up to 30 minutes in milliseconds
+    RandomFactor := RandomRange(-1800000, 1800000); // up to 30 minutes in milliseconds
     BreakLength := BreakLength + RandomFactor;
     Logout.ClickLogout;
     hours1 := BreakLength div 3600000;
@@ -434,7 +437,7 @@ begin
   for i := 5 downto 1 do
   begin
     WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleScriptSetup(): QUICK! ' + IntToStr(i) + ' seconds! - Move mouse to middle of rock & WAIT for click');
-    Wait(1000);
+    Wait(RandomRange(877, 1222));
     EIOS_GetRealMousePosition(RSClient.RemoteInput.EIOS, x, y);
     MSPoint1 := Point(x, y);
     Mouse.Move(MSPoint1);
@@ -444,14 +447,14 @@ begin
   Mouse.Click(MOUSE_LEFT);
   // Record the current up text for rock to mine when empty
   Inventory.WaitCount(OreSlot + 1, RandomRange(40000, 60000));
-  wait(500);
+  Wait(RandomRange(432, 673));
   EmptyRockUpText := Mainscreen.GetUpText();
   InvCount := Inventory.Count();
-  wait(1000);
+  Wait(RandomRange(532, 773));
   for j := 5 downto 1 do
   begin
     WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleScriptSetup(): QUICK! ' + IntToStr(j) + ' seconds! - Move mouse to middle of rock & WAIT for click');
-    Wait(1000);
+    Wait(RandomRange(877, 1222));
     EIOS_GetRealMousePosition(RSClient.RemoteInput.EIOS, x2, y2);
     MSPoint2 := Point(x2, y2);
     Mouse.Move(MSPoint2);
@@ -534,7 +537,7 @@ begin
   WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleSetup(): Running');
   FirstLogin := True;
   MousePositions := False;
-  MustWait := False;
+  BreakRestrict := RandomRange(3600000, 5400000);
   ClearDebug();
   S1mplePaint();
   RunTimeConverted := (RunTimeMinutes * 60000 + RandomRange(- 10000, 10000));
