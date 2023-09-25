@@ -404,11 +404,15 @@ begin
   while Inventory.IsSlotUsed(OreSlot) do
   begin
     Inventory.ClickSlot(OreSlot);
+    if Inventory.IsSlotSelected(OreSlot) then
+      Inventory.ClickSlot(OreSlot);
     Inventory.WaitCount(OreSlot, RandomRange(LowWait, HighWait));
   end;
   while Inventory.IsSlotUsed(OreSlot + 1) do
   begin
     Inventory.ClickSlot(OreSlot + 1);
+    if Inventory.IsSlotSelected(OreSlot + 1) then
+      Inventory.ClickSlot(OreSlot + 1);
     Inventory.WaitCount(OreSlot + 1, RandomRange(LowWait, HighWait));
   end;
   KeyUp(VK_SHIFT);
@@ -494,10 +498,6 @@ begin
   begin
     Wait(RandomRange(1000, 3000));
     S1mpleFailsafe(WrongRock);
-    if Inventory.IsSlotSelected(OreSlot) then
-      Inventory.SetSelectedSlot(-OreSlot);
-    if Inventory.IsSlotSelected(OreSlot + 1) then
-      Inventory.SetSelectedSlot(-OreSlot + 1);
     exit;
   end;
   if Mainscreen.IsUpText(EmptyRockUpText) or Mainscreen.IsUpText(RockUpText) then
@@ -520,10 +520,6 @@ begin
   begin
     Wait(RandomRange(1000, 3000));
     S1mpleFailsafe(WrongRock);
-    if Inventory.IsSlotSelected(OreSlot) then
-      Inventory.SetSelectedSlot(-OreSlot);
-    if Inventory.IsSlotSelected(OreSlot + 1) then
-      Inventory.SetSelectedSlot(-OreSlot + 1);
     exit;
   end;
   WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleMiner: Total ', (RockUpText), ' mined: ', (RockTracker));
