@@ -23,7 +23,7 @@ This is a mining bot script that allows you to mine anywhere in OSRS with ease a
 - [Watch this quick and simple setup video](https://youtu.be/pz7h6melFjw?feature=shared).
 
 ### Proggies
-
+- [Watch this video for a S1mpleMiner timelapse](https://youtu.be/tVwxr5iqdmc?feature=shared)
 ### Disclaimer
 - This bot script is for educational purposes only and should not be used to gain an unfair advantage in OSRS. Use it at your own risk.
 - This bot script is not affiliated with or endorsed by Jagex, the developer of OSRS.
