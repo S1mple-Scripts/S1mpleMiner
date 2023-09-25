@@ -4,15 +4,15 @@ program S1mpleMiner;
 {$I WaspLib/osr.simba}
 
 const
-  Local_Version := 1.0;
+  Local_Version := 1.1;
 
 {Script Settings Below – YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {User Settings}
   RunTimeMinutes = (240);
   // How long should the script run for?
-  UserLogin = '';
+  User = '';
   // What username do you log in with?
-  UserPassword = '';
+  Password = '';
   // What password do you enter?
   CameraAngleLow = False;
   // Do you want your view to be low or high? !!Must be the same as when you setup the script!!
@@ -187,7 +187,7 @@ end;
 procedure S1mpleLogin();
 begin
   WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleLogin(): Running...(only if needed)');
-  Login.AddPlayer(UserLogin, UserPassword);
+  Login.AddPlayer(User, Password);
   if Login.IsOpen then
     Login.LoginPlayer();
   if not Inventory.IsOpen then
