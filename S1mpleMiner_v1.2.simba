@@ -4,7 +4,7 @@ program S1mpleMiner;
 {$I WaspLib/osr.simba}
 
 const
-  Local_Version := 1.1;
+  Local_Version := 1.2;
 
 {Script Settings Below – YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {User Settings}
@@ -347,7 +347,8 @@ end;
 
 procedure S1mpleBreak();
 var
-  BreakLength, ScriptRunTime, hours1, minutes1, seconds1: UInt64;
+  hours1, minutes1, seconds1: UInt64;
+  RandomFactor, ScriptRunTime, BreakLength: Int32;
   BreakChance: Double;
   BreakLengthConverted: String;
 begin
@@ -363,6 +364,12 @@ begin
     WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleBreak(): Running');
     // Break for a random time between a tenth and a half of the run time
     BreakLength := RandomRange(ScriptRunTime div 10, ScriptRunTime div 2);
+     // Ensure BreakLength does not exceed 6 hours
+    if BreakLength > 21600000 then
+      BreakLength := 21600000;
+    // Add some randomisation to the break length
+    RandomFactor := RandomRange(-30 * 60 * 1000, 30 * 60 * 1000); // up to 30 minutes in milliseconds
+    BreakLength := BreakLength + RandomFactor;
     Logout.ClickLogout;
     hours1 := BreakLength div 3600000;
     minutes1 := (BreakLength mod 3600000) div 60000;
@@ -487,6 +494,10 @@ begin
   begin
     Wait(RandomRange(1000, 3000));
     S1mpleFailsafe(WrongRock);
+    if Inventory.IsSlotSelected(OreSlot) then
+      Inventory.SetSelectedSlot(-OreSlot);
+    if Inventory.IsSlotSelected(OreSlot + 1) then
+      Inventory.SetSelectedSlot(-OreSlot + 1);
     exit;
   end;
   if Mainscreen.IsUpText(EmptyRockUpText) or Mainscreen.IsUpText(RockUpText) then
@@ -509,6 +520,10 @@ begin
   begin
     Wait(RandomRange(1000, 3000));
     S1mpleFailsafe(WrongRock);
+    if Inventory.IsSlotSelected(OreSlot) then
+      Inventory.SetSelectedSlot(-OreSlot);
+    if Inventory.IsSlotSelected(OreSlot + 1) then
+      Inventory.SetSelectedSlot(-OreSlot + 1);
     exit;
   end;
   WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleMiner: Total ', (RockUpText), ' mined: ', (RockTracker));
