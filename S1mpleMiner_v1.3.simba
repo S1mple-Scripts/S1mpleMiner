@@ -75,7 +75,7 @@ var
 procedure TMM2MS.Setup; override;
 begin
   Self.Name := 'MM2MS';
-  //Self.ZoomLevel := 100;
+  Self.ZoomLevel := 100;
 end;
 
 procedure TMouse.Setup; override;
