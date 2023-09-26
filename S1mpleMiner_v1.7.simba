@@ -4,7 +4,7 @@ program S1mpleMiner;
 {$I WaspLib/osr.simba}
 
 const
-  Local_Version := 1.632;
+  Local_Version := 1.7;
 
 {Script Settings Below – YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {User Settings}
@@ -14,24 +14,26 @@ const
   // What username do you log in with?
   Password = '';
   // What password do you enter?
-  CameraAngleLow = False;
-  // Do you want your view to be low or high? !!Must be the same as when you setup the script!!
-  CompassDirection = 'North';
-  // What compass direction do you want? !!Must be the same as when you setup the script!!
-  // 'North'
-  // 'West'
-  // 'South'
-  // 'East'
+ TurboMode = False;
+// Do you want to enable turbo powermining?
+CameraAngleLow = False;
+// Do you want your view to be low or high? !!Must be the same as when you setup the script!!
+CompassDirection = 'North';
+// What compass direction do you want? !!Must be the same as when you setup the script!!
+// 'North'
+// 'West'
+// 'South'
+// 'East'
 {You can slightly adjust these to decrease bot fingerprinting}
-  MouseSpeed = (21);
-  MouseGravity = (15);
-  MouseWind = (3);
+MouseSpeed = (21);
+MouseGravity = (15);
+MouseWind = (3);
 
 {Rock Timer Settings}
-  LowWait = 4000;
-  // Average time to mine your rock
-  HighWait = 9000;
-  // 5 seconds longer than the average time to mine your rock
+LowWait = 1500;
+// Average time to mine your rock
+HighWait = 3500;
+// 5 seconds longer than the average time to mine your rock
 {Script Settings Above– YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {}
 {}
@@ -117,7 +119,7 @@ begin
         if ChanceToHit < 50 then
           // % chance to hit the slot on retry
           begin
-            case random (20) of
+            case random(20) of
               0 .. 15: Wait(RandomRange(11, 33));
               16 .. 18: Wait(RandomRange(111, 333));
               19: Wait(RandomRange(1111, 3333));
@@ -343,11 +345,12 @@ begin
     WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleBreak(): Running');
     // Break for a random time between a tenth and a half of the run time
     BreakLength := RandomRange(BreakTimer.ElapsedTime() div 10, BreakTimer.ElapsedTime() div 2);
-     // Ensure BreakLength does not exceed 6 hours
+    // Ensure BreakLength does not exceed 6 hours
     if BreakLength > 21600000 then
     begin
       BreakLength := 21600000;
-      RandomFactor := RandomRange(-1800000, 1800000); // up to 30 minutes in milliseconds
+      RandomFactor := RandomRange(- 1800000, 1800000);
+      // up to 30 minutes in milliseconds
       BreakLength := BreakLength + RandomFactor;
     end;
     //Logout.ClickLogout;
@@ -450,6 +453,7 @@ end;
 procedure S1mpleMine();
 var
   RandomPoint1, RandomPoint2: TPoint;
+  PreClickChance: Int32;
 begin
   if MousePositions = False then
     S1mpleScriptSetup(MSPoint1, MSPoint2);
@@ -460,6 +464,10 @@ begin
   InvCount := Inventory.Count();
   if Mainscreen.IsUpText(EmptyRockUpText) or Mainscreen.IsUpText(RockUpText) then
   begin
+    PreClickChance := Random(11);
+    if PreClickChance > 9 then
+      if MainScreen.IsUpText(EmptyRockUpText) and TurboMode = True then
+        Mouse.Click(MOUSE_LEFT);
     while MainScreen.IsUpText(EmptyRockUpText) do
       S1mpleReactionWait();
     InvCount := Inventory.Count();
@@ -484,6 +492,10 @@ begin
   end;
   if Mainscreen.IsUpText(EmptyRockUpText) or Mainscreen.IsUpText(RockUpText) then
   begin
+    PreClickChance := Random(11);
+    if PreClickChance > 9 then
+      if MainScreen.IsUpText(EmptyRockUpText) and TurboMode = True then
+        Mouse.Click(MOUSE_LEFT);
     while MainScreen.IsUpText(EmptyRockUpText) do
       S1mpleReactionWait();
     InvCount := Inventory.Count();
