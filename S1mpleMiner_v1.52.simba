@@ -366,7 +366,7 @@ begin
   if BreakRunTime < BreakRestrict then
     Exit;
   // Chance of 1/333 to break
-  BreakChance := Random(5);
+  BreakChance := Random(333);
   if BreakChance = 1 then
   begin
     WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleBreak(): Running');
