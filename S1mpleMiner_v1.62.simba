@@ -234,14 +234,14 @@ begin
   if Failsafe = 1 then
     FailsafeTimer.Start;
   // If the failsafe timer has been running for more than 5 minutes (300000 ms) and there have been at least 20 failsafe events
-  if (FailsafeTimer.ElapsedTime() >= 300000) and (Failsafe >= 10) then
+  if (FailsafeTimer.ElapsedTime() >= 300000) and (Failsafe >= 20) then
   begin
     // Terminate the script
     WriteLn([(Time)], 'S1mpleMiner: Failsafe activated');
     S1mpleTerminate();
   end
   // If the failsafe timer has been running for more than 5 minutes but there have been less than 20 failsafe events
-  else if (FailsafeTimer.ElapsedTime() >= 300000) and (Failsafe < 10) then
+  else if (FailsafeTimer.ElapsedTime() >= 300000) and (Failsafe < 20) then
   begin
     // Reset the failsafe counter and timer without terminating the script
     Failsafe := 0;
