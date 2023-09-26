@@ -4,7 +4,7 @@ program S1mpleMiner;
 {$I WaspLib/osr.simba}
 
 const
-  Local_Version := 1.6;
+  Local_Version := 1.61;
 
 {Script Settings Below – YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {User Settings}
@@ -97,7 +97,7 @@ begin
     begin
       Mouse.Click(MOUSE_LEFT);
       case random(10) of
-        0 .. 7: Wait(RandomRange(0, 125));
+        0 .. 7: Wait(RandomRange(0, 75));
       end;
       Result := True;
     end;
