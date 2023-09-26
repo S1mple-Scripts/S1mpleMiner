@@ -68,7 +68,7 @@ var
   ShortMinWait: Int32 = 16;
   ShortMaxWait: Int32 = 86;
   LongMinWait: Int32 = 66;
-  LongMaxWait: Int32 = 136;
+  LongMaxWait: Int32 = 156;
   AvgMinWait: Int32 = 46;
   AvgMaxWait: Int32 = 106;
 
