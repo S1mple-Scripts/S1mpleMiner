@@ -477,7 +477,8 @@ begin
   end
   else
   begin
-    Wait(RandomRange(1000, 3000));
+    if Inventory.IsSlotSelected(OreSlot) then
+      Inventory.ClickSlot(OreSlot);
     S1mpleFailsafe();
     exit;
   end;
@@ -499,7 +500,8 @@ begin
   end
   else
   begin
-    Wait(RandomRange(1000, 3000));
+    if Inventory.IsSlotSelected(OreSlot) then
+      Inventory.ClickSlot(OreSlot);
     S1mpleFailsafe();
     exit;
   end;
