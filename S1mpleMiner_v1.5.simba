@@ -75,11 +75,11 @@ var
 procedure TMouse.Setup; override;
 begin
   Self.Name := 'Mouse';
-  Self.Speed := MouseSpeed + RandomRange(- 1, 1);
+  Self.Speed := MouseSpeed + RandomRange(- 2, 2);
   Self.Gravity := MouseGravity + RandomRange(- 2, 2);
   Self.Wind := MouseWind + RandomRange(- 2, 2);
   Self.MissChance := RandomRange(5, 15);
-  Self.Distribution := MOUSE_DISTRIBUTION_GAUSS;
+  Self.Distribution := MOUSE_DISTRIBUTION_ROWP;
   Self.CanIdle := True;
 {$IFDEF SRL_DEBUG_MOUSE}
   Self.OnTeleport := @ Self._DebugCallback;
@@ -323,16 +323,28 @@ begin
   if (BlockLength < 16 * 60000) then
     if (Random > 0.5) then
     begin
+      Mouse.Speed := MouseSpeed + RandomRange(- 1, 3);
+      Mouse.Gravity := MouseGravity + RandomRange(- 3, 1);
+      Mouse.Wind := MouseWind + RandomRange(- 2, 2);
+      Mouse.MissChance := RandomRange(5, 15);
       CurrentReactionTimes.MinTime := Random(ShortMinWait);
       CurrentReactionTimes.MaxTime := CurrentReactionTimes.MinTime + Random(ShortMaxWait - ShortMinWait);
     end
   else
   begin
+    Mouse.Speed := MouseSpeed + RandomRange(- 2, 2);
+    Mouse.Gravity := MouseGravity + RandomRange(0, 4);
+    Mouse.Wind := MouseWind + RandomRange(- 2, 2);
+    Mouse.MissChance := RandomRange(15, 25);
     CurrentReactionTimes.MinTime := Random(LongMinWait);
     CurrentReactionTimes.MaxTime := CurrentReactionTimes.MinTime + Random(LongMaxWait - LongMinWait);
   end
   else
   begin
+    Mouse.Speed := MouseSpeed + RandomRange(- 2, 2);
+    Mouse.Gravity := MouseGravity + RandomRange(- 2, 2);
+    Mouse.Wind := MouseWind + RandomRange(- 2, 2);
+    Mouse.MissChance := RandomRange(10, 20);
     CurrentReactionTimes.MinTime := Random(AvgMinWait);
     CurrentReactionTimes.MaxTime := CurrentReactionTimes.MinTime + Random(AvgMaxWait - AvgMinWait);
   end;
@@ -545,6 +557,7 @@ begin
   FirstLogin := True;
   MousePositions := False;
   BreakRestrict := RandomRange(3600000, 5400000);
+  S1mpleReactionWait();
   ClearDebug();
   S1mplePaint();
   RunTimeConverted := (RunTimeMinutes * 60000 + RandomRange(- 10000, 10000));
