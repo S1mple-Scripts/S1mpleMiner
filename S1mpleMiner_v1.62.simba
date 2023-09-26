@@ -4,7 +4,7 @@ program S1mpleMiner;
 {$I WaspLib/osr.simba}
 
 const
-  Local_Version := 1.61;
+  Local_Version := 1.62;
 
 {Script Settings Below – YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {User Settings}
@@ -324,7 +324,7 @@ end;
 procedure S1mpleBreak();
 var
   hours1, minutes1, seconds1: UInt64;
-  RandomFactor, BreakRunTime, BreakLength: Int32;
+  RandomFactor, BreakLength: Int32;
   BreakChance: Double;
   BreakLengthConverted: String;
 begin
