@@ -4,7 +4,7 @@ program S1mpleMiner;
 {$I WaspLib/osr.simba}
 
 const
-  Local_Version := 1.4;
+  Local_Version := 1.5;
 
 {Script Settings Below – YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {User Settings}
@@ -55,7 +55,7 @@ type
   end;
 
 var
-  TimeUp, FirstLogin: Boolean;
+  TimeUp, FirstLogin, Dropped: Boolean;
   RunTimeConverted, RockTracker, OreSlot, WrongRock, RockStolen, InvCount, BreakRestrict: Int32;
   RunTimer, FailsafeTimer: TStopWatch;
   MSPoint1, MSPoint2: TPoint;
@@ -65,12 +65,12 @@ var
   RockUpText, EmptyRockUpText: String;
 
 {#######}
-  ShortMinWait: Int32 = 106;
-  ShortMaxWait: Int32 = 196;
-  LongMinWait: Int32 = 127;
-  LongMaxWait: Int32 = 777;
-  AvgMinWait: Int32 = 127;
-  AvgMaxWait: Int32 = 267;
+  ShortMinWait: Int32 = 16;
+  ShortMaxWait: Int32 = 85;
+  LongMinWait: Int32 = 86;
+  LongMaxWait: Int32 = 156;
+  AvgMinWait: Int32 = 56;
+  AvgMaxWait: Int32 = 126;
 
 procedure TMouse.Setup; override;
 begin
@@ -134,7 +134,7 @@ end;
 {Modified HoverSlot function that adds chance to miss slot – Useful for blind hovering}
 function TRSInventory.HoverSlotS1mple(Slot: Int32): Boolean;
 var
-  ChanceToMiss: Int32;
+  ChanceToMiss, ChanceToHit: Int32;
   SlotBox: TBox;
   MissedPoint: TPoint;
 begin
@@ -153,11 +153,15 @@ begin
         // Adjust the range as needed
         Mouse.Move(MissedPoint);
         // Retry with a greater chance to succeed
-        ChanceToMiss := Random(100);
-        if ChanceToMiss < 90 then
+        ChanceToHit := Random(100);
+        if ChanceToHit < 50 then
           // % chance to hit the slot on retry
           begin
-            Wait(RandomRange(11, 33));
+            case random (20) of
+              0 .. 15: Wait(RandomRange(11, 33));
+              16 .. 18: Wait(RandomRange(111, 333));
+              19: Wait(RandomRange(1111, 3333));
+            end;
             Mouse.Move(SlotBox);
           end;
       end
@@ -392,9 +396,11 @@ begin
   if not Inventory.IsOpen then
     Inventory.Open;
   WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleDrop(): Running');
-  S1mpleReactionWait();
-  Inventory.HoverSlotS1mple(OreSlot);
-  Inventory.WaitCount(OreSlot + 1, RandomRange(LowWait, HighWait));
+  if not Inventory.IsSlotUsed(OreSlot) then
+  begin
+    Inventory.HoverSlotS1mple(OreSlot);
+    Inventory.WaitCount(OreSlot + 1, RandomRange(LowWait, HighWait));
+  end;
   if Inventory.Count() < (OreSlot + 1) then
   begin
     S1mpleFailsafe(RockStolen);
@@ -404,19 +410,20 @@ begin
     inc(RockTracker);
   KeyDown(VK_SHIFT);
   S1mpleReactionWait();
-  while Inventory.IsSlotUsed(OreSlot) do
+  if Inventory.IsSlotUsed(OreSlot) then
   begin
+    S1mpleReactionWait();
     Inventory.ClickSlot(OreSlot);
     if Inventory.IsSlotSelected(OreSlot) then
       Inventory.ClickSlot(OreSlot);
-    Inventory.WaitCount(OreSlot, RandomRange(LowWait, HighWait));
+    Dropped := True;
   end;
-  while Inventory.IsSlotUsed(OreSlot + 1) do
+  if Inventory.IsSlotUsed(OreSlot + 1) then
   begin
+    S1mpleReactionWait();
     Inventory.ClickSlot(OreSlot + 1);
     if Inventory.IsSlotSelected(OreSlot + 1) then
       Inventory.ClickSlot(OreSlot + 1);
-    Inventory.WaitCount(OreSlot + 1, RandomRange(LowWait, HighWait));
   end;
   KeyUp(VK_SHIFT);
   Wait(33, 77, wdLeft);
