@@ -4,7 +4,7 @@ program S1mpleMiner;
 {$I WaspLib/osr.simba}
 
 const
-  Local_Version := 1.61;
+  Local_Version := 1.5;
 
 {Script Settings Below – YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {User Settings}
@@ -76,32 +76,6 @@ var
 procedure TKeyboard.Send(const Text: String); override;
 begin
   Self.Send(Text, Random(40, 260), Random(32, 160), Random(40, 285));
-end;
-
-{Modified the wait between keypress to make it look more human}
-procedure TKeyboard.Send(const Text: String; KeyPressAfter: Integer); override;
-begin
-  Self.Send(Text);
-  Wait(35, 244, wdLeft);
-  Self.PressKey(KeyPressAfter);
-end;
-
-{Modified the wait after click to make it look more human}
-function TRSInventory.ClickSlot(Slot: Int32; Option: String = ''): Boolean; override;
-begin
-  if Self.MouseSlot(Slot) then
-  begin
-    if (Option <> '') then
-      Result := ChooseOption.Select(Option)
-    else
-    begin
-      Mouse.Click(MOUSE_LEFT);
-      case random(10) of
-        0 .. 7: Wait(RandomRange(0, 75));
-      end;
-      Result := True;
-    end;
-  end;
 end;
 
 {Replica of SetHighestPitch() but opposite}
