@@ -4,7 +4,7 @@ program S1mpleMiner;
 {$I WaspLib/osr.simba}
 
 const
-  Local_Version := 1.5;
+  Local_Version := 1.51;
 
 {Script Settings Below – YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {User Settings}
@@ -382,7 +382,7 @@ begin
   begin
     WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleBreak(): Running');
     // Break for a random time between a tenth and a half of the run time
-    BreakLength := RandomRange(ScriptRunTime div 10, ScriptRunTime div 2);
+    BreakLength := RandomRange(ScriptRunTime div 20, ScriptRunTime div 3);
      // Ensure BreakLength does not exceed 6 hours
     if BreakLength > 21600000 then
       BreakLength := 21600000;
