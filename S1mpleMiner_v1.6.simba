@@ -4,7 +4,7 @@ program S1mpleMiner;
 {$I WaspLib/osr.simba}
 
 const
-  Local_Version := 1.52;
+  Local_Version := 1.6;
 
 {Script Settings Below – YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {User Settings}
@@ -355,15 +355,12 @@ var
   BreakLengthConverted: String;
 begin
   // Get run time in milliseconds
-  if BreakTimer.ElapsedTime() = 0 then
-    BreakTimer.Start();
   if BreakTimer.ElapsedTime() > 21600000 then
   begin
     BreakTimer.Reset();
     BreakTimer.Start();
   end;
-  BreakRunTime := BreakTimer.ElapsedTime();
-  if BreakRunTime < BreakRestrict then
+  if BreakTimer.ElapsedTime() < BreakRestrict then
     Exit;
   // Chance of 1/333 to break
   BreakChance := Random(333);
@@ -371,7 +368,7 @@ begin
   begin
     WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleBreak(): Running');
     // Break for a random time between a tenth and a half of the run time
-    BreakLength := RandomRange(BreakRunTime div 10, BreakRunTime div 2);
+    BreakLength := RandomRange(BreakTimer.ElapsedTime() div 10, BreakTimer.ElapsedTime() div 2);
      // Ensure BreakLength does not exceed 6 hours
     if BreakLength > 21600000 then
     begin
@@ -379,14 +376,13 @@ begin
       RandomFactor := RandomRange(-1800000, 1800000); // up to 30 minutes in milliseconds
       BreakLength := BreakLength + RandomFactor;
     end;
-    Logout.ClickLogout;
+    //Logout.ClickLogout;
     hours1 := BreakLength div 3600000;
     minutes1 := (BreakLength mod 3600000) div 60000;
     seconds1 := ((BreakLength mod 3600000) mod 60000) div 1000;
     BreakLengthConverted := IntToStr(hours1) + 'Hr/s ' + IntToStr(minutes1) + 'Min/s ' + IntToStr(seconds1) + 'Sec/s';
     WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleBreak(): Breaking for: ', BreakLengthConverted);
     Wait(BreakLength);
-    S1mpleLogin();
   end;
 end;
 
@@ -546,6 +542,7 @@ begin
   WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleSetup(): Running');
   FirstLogin := True;
   MousePositions := False;
+  BreakTimer.Start();
   BreakRestrict := RandomRange(3600000, 5400000);
   S1mpleReactionWait();
   ClearDebug();
