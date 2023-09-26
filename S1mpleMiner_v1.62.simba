@@ -66,11 +66,11 @@ var
 
 {#######}
   ShortMinWait: Int32 = 16;
-  ShortMaxWait: Int32 = 85;
-  LongMinWait: Int32 = 86;
-  LongMaxWait: Int32 = 156;
-  AvgMinWait: Int32 = 56;
-  AvgMaxWait: Int32 = 126;
+  ShortMaxWait: Int32 = 86;
+  LongMinWait: Int32 = 66;
+  LongMaxWait: Int32 = 136;
+  AvgMinWait: Int32 = 46;
+  AvgMaxWait: Int32 = 106;
 
 {Modified the waits between keypress to make it look more human}
 procedure TKeyboard.Send(const Text: String); override;
