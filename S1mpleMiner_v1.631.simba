@@ -189,7 +189,7 @@ begin
   WriteLn([(Time)], 'S1mpleMining: Terminating script');
   if IsKeyDown(VK_Shift) then
     KeyUP(VK_SHIFT);
-  case random(3) of
+  case random(2) of
     1: Logout.ClickLogout;
   end;
   EIOS_SetMouseInputEnabled(RSClient.RemoteInput.EIOS, True);
