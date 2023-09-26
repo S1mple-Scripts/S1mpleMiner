@@ -4,7 +4,7 @@ program S1mpleMiner;
 {$I WaspLib/osr.simba}
 
 const
-  Local_Version := 1.63;
+  Local_Version := 1.631;
 
 {Script Settings Below – YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {User Settings}
@@ -152,7 +152,8 @@ procedure S1mpleLogin();
 begin
   WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleLogin(): Running...(only if needed)');
   Login.AddPlayer(User, Password);
-  Login.LoginPlayer();
+  if Login.IsOpen then
+    Login.LoginPlayer();
   if not Inventory.IsOpen then
     Inventory.Open;
   S1mpleUserCompass(CompassDirection);
