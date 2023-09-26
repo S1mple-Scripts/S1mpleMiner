@@ -4,7 +4,7 @@ program S1mpleMiner;
 {$I WaspLib/osr.simba}
 
 const
-  Local_Version := 1.5;
+  Local_Version := 1.61;
 
 {Script Settings Below – YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {User Settings}
@@ -384,7 +384,6 @@ begin
   S1mpleReactionWait();
   if Inventory.IsSlotUsed(OreSlot) then
   begin
-    S1mpleReactionWait();
     Inventory.ClickSlot(OreSlot);
     if Inventory.IsSlotSelected(OreSlot) then
       Inventory.ClickSlot(OreSlot);
