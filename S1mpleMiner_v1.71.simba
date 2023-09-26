@@ -4,7 +4,7 @@ program S1mpleMiner;
 {$I WaspLib/osr.simba}
 
 const
-  Local_Version := 1.7;
+  Local_Version := 1.71;
 
 {Script Settings Below – YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {User Settings}
@@ -14,26 +14,26 @@ const
   // What username do you log in with?
   Password = '';
   // What password do you enter?
- TurboMode = False;
-// Do you want to enable turbo powermining?
-CameraAngleLow = False;
-// Do you want your view to be low or high? !!Must be the same as when you setup the script!!
-CompassDirection = 'North';
-// What compass direction do you want? !!Must be the same as when you setup the script!!
-// 'North'
-// 'West'
-// 'South'
-// 'East'
+  TurboMode = False;
+  // Do you want to enable turbo powermining?
+  CameraAngleLow = False;
+  // Do you want your view to be low or high? !!Must be the same as when you setup the script!!
+  CompassDirection = 'North';
+  // What compass direction do you want? !!Must be the same as when you setup the script!!
+  // 'North'
+  // 'West'
+  // 'South'
+  // 'East'
 {You can slightly adjust these to decrease bot fingerprinting}
-MouseSpeed = (21);
-MouseGravity = (15);
-MouseWind = (3);
+  MouseSpeed = (21);
+  MouseGravity = (15);
+  MouseWind = (3);
 
 {Rock Timer Settings}
-LowWait = 1500;
-// Average time to mine your rock
-HighWait = 3500;
-// 5 seconds longer than the average time to mine your rock
+  LowWait = 1500;
+  // Average time to mine your rock
+  HighWait = 3500;
+  // 5 seconds longer than the average time to mine your rock
 {Script Settings Above– YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {}
 {}
@@ -58,7 +58,7 @@ type
 
 var
   TimeUp, FirstLogin, Dropped: Boolean;
-  RunTimeConverted, RockTracker, OreSlot, InvCount, BreakRestrict, Failsafe: Int32;
+  RunTimeConverted, RockTracker, OreSlot, InvCount, BreakRestrict, Failsafe, PreClickOdds: Int32;
   RunTimer, FailsafeTimer, BreakTimer: TStopWatch;
   MSPoint1, MSPoint2: TPoint;
   MousePositions: Boolean;
@@ -286,6 +286,7 @@ begin
       Mouse.Gravity := MouseGravity + RandomRange(- 3, 1);
       Mouse.Wind := MouseWind + RandomRange(- 2, 2);
       Mouse.MissChance := RandomRange(5, 15);
+      PreClickOdds := 9;
       CurrentReactionTimes.MinTime := Random(ShortMinWait);
       CurrentReactionTimes.MaxTime := CurrentReactionTimes.MinTime + Random(ShortMaxWait - ShortMinWait);
     end
@@ -295,6 +296,7 @@ begin
     Mouse.Gravity := MouseGravity + RandomRange(0, 4);
     Mouse.Wind := MouseWind + RandomRange(- 2, 2);
     Mouse.MissChance := RandomRange(15, 25);
+    PreClickOdds := 4;
     CurrentReactionTimes.MinTime := Random(LongMinWait);
     CurrentReactionTimes.MaxTime := CurrentReactionTimes.MinTime + Random(LongMaxWait - LongMinWait);
   end
@@ -304,6 +306,7 @@ begin
     Mouse.Gravity := MouseGravity + RandomRange(- 2, 2);
     Mouse.Wind := MouseWind + RandomRange(- 2, 2);
     Mouse.MissChance := RandomRange(10, 20);
+    PreClickOdds := 7;
     CurrentReactionTimes.MinTime := Random(AvgMinWait);
     CurrentReactionTimes.MaxTime := CurrentReactionTimes.MinTime + Random(AvgMaxWait - AvgMinWait);
   end;
@@ -464,8 +467,8 @@ begin
   InvCount := Inventory.Count();
   if Mainscreen.IsUpText(EmptyRockUpText) or Mainscreen.IsUpText(RockUpText) then
   begin
-    PreClickChance := Random(11);
-    if PreClickChance > 9 then
+    PreClickChance := Random(12);
+    if PreClickChance < PreClickOdds then
       if MainScreen.IsUpText(EmptyRockUpText) and TurboMode = True then
         Mouse.Click(MOUSE_LEFT);
     while MainScreen.IsUpText(EmptyRockUpText) do
@@ -492,8 +495,8 @@ begin
   end;
   if Mainscreen.IsUpText(EmptyRockUpText) or Mainscreen.IsUpText(RockUpText) then
   begin
-    PreClickChance := Random(11);
-    if PreClickChance > 9 then
+    PreClickChance := Random(12);
+    if PreClickChance < PreClickOdds then
       if MainScreen.IsUpText(EmptyRockUpText) and TurboMode = True then
         Mouse.Click(MOUSE_LEFT);
     while MainScreen.IsUpText(EmptyRockUpText) do
