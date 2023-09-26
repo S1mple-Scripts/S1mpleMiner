@@ -4,7 +4,7 @@ program S1mpleMiner;
 {$I WaspLib/osr.simba}
 
 const
-  Local_Version := 1.51;
+  Local_Version := 1.5;
 
 {Script Settings Below – YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {User Settings}
@@ -56,8 +56,8 @@ type
 
 var
   TimeUp, FirstLogin, Dropped: Boolean;
-  RunTimeConverted, RockTracker, OreSlot, WrongRock, RockStolen, InvCount, BreakRestrict: Int32;
-  RunTimer, FailsafeTimer: TStopWatch;
+  RunTimeConverted, RockTracker, OreSlot, InvCount, BreakRestrict, Failsafe: Int32;
+  RunTimer, FailsafeTimer, BreakTimer: TStopWatch;
   MSPoint1, MSPoint2: TPoint;
   MousePositions: Boolean;
   CurrentBlockEnd: TDateTime;
@@ -71,20 +71,6 @@ var
   LongMaxWait: Int32 = 156;
   AvgMinWait: Int32 = 56;
   AvgMaxWait: Int32 = 126;
-
-procedure TMouse.Setup; override;
-begin
-  Self.Name := 'Mouse';
-  Self.Speed := MouseSpeed + RandomRange(- 2, 2);
-  Self.Gravity := MouseGravity + RandomRange(- 2, 2);
-  Self.Wind := MouseWind + RandomRange(- 2, 2);
-  Self.MissChance := RandomRange(5, 15);
-  Self.Distribution := MOUSE_DISTRIBUTION_ROWP;
-  Self.CanIdle := True;
-{$IFDEF SRL_DEBUG_MOUSE}
-  Self.OnTeleport := @ Self._DebugCallback;
-{$ENDIF}
-end;
 
 {Modified the waits between keypress to make it look more human}
 procedure TKeyboard.Send(const Text: String); override;
@@ -265,7 +251,7 @@ begin
 end;
 
 {Procedure to handle failsafe conditions}
-procedure S1mpleFailsafe(Failsafe: Int32);
+procedure S1mpleFailsafe();
 begin
   WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleFailsafe(): Running');
   // Increment the failsafe counter
@@ -278,9 +264,6 @@ begin
   begin
     // Terminate the script
     WriteLn([(Time)], 'S1mpleMiner: Failsafe activated');
-    // Reset the failsafe counter and timer
-    Failsafe := 0;
-    FailsafeTimer.Reset;
     S1mpleTerminate();
   end
   // If the failsafe timer has been running for more than 5 minutes but there have been less than 20 failsafe events
@@ -367,28 +350,35 @@ end;
 procedure S1mpleBreak();
 var
   hours1, minutes1, seconds1: UInt64;
-  RandomFactor, ScriptRunTime, BreakLength: Int32;
+  RandomFactor, BreakRunTime, BreakLength: Int32;
   BreakChance: Double;
   BreakLengthConverted: String;
 begin
   // Get run time in milliseconds
-  ScriptRunTime := RunTimer.ElapsedTime();
-  // Only break if it's run for more than 60-90 minutes (converted to milliseconds)
-  if ScriptRunTime < BreakRestrict then
+  if BreakTimer.ElapsedTime() = 0 then
+    BreakTimer.Start();
+  if BreakTimer.ElapsedTime() > 21600000 then
+  begin
+    BreakTimer.Reset();
+    BreakTimer.Start();
+  end;
+  BreakRunTime := BreakTimer.ElapsedTime();
+  if BreakRunTime < BreakRestrict then
     Exit;
   // Chance of 1/333 to break
-  BreakChance := Random(333);
+  BreakChance := Random(5);
   if BreakChance = 1 then
   begin
     WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleBreak(): Running');
     // Break for a random time between a tenth and a half of the run time
-    BreakLength := RandomRange(ScriptRunTime div 20, ScriptRunTime div 3);
+    BreakLength := RandomRange(BreakRunTime div 10, BreakRunTime div 2);
      // Ensure BreakLength does not exceed 6 hours
     if BreakLength > 21600000 then
+    begin
       BreakLength := 21600000;
-    // Add some randomisation to the break length
-    RandomFactor := RandomRange(-1800000, 1800000); // up to 30 minutes in milliseconds
-    BreakLength := BreakLength + RandomFactor;
+      RandomFactor := RandomRange(-1800000, 1800000); // up to 30 minutes in milliseconds
+      BreakLength := BreakLength + RandomFactor;
+    end;
     Logout.ClickLogout;
     hours1 := BreakLength div 3600000;
     minutes1 := (BreakLength mod 3600000) div 60000;
@@ -415,7 +405,7 @@ begin
   end;
   if Inventory.Count() < (OreSlot + 1) then
   begin
-    S1mpleFailsafe(RockStolen);
+    S1mpleFailsafe();
     exit;
   end
   else
@@ -519,7 +509,7 @@ begin
   else
   begin
     Wait(RandomRange(1000, 3000));
-    S1mpleFailsafe(WrongRock);
+    S1mpleFailsafe();
     exit;
   end;
   if Mainscreen.IsUpText(EmptyRockUpText) or Mainscreen.IsUpText(RockUpText) then
@@ -541,7 +531,7 @@ begin
   else
   begin
     Wait(RandomRange(1000, 3000));
-    S1mpleFailsafe(WrongRock);
+    S1mpleFailsafe();
     exit;
   end;
   WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleMiner: Total ', (RockUpText), ' mined: ', (RockTracker));
