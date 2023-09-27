@@ -4,7 +4,7 @@ program S1mpleMiner;
 {$I WaspLib/osr.simba}
 
 const
-  Local_Version := 1.8;
+  Local_Version := 1.81;
 
 {Script Settings Below – YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {User Settings}
@@ -25,14 +25,14 @@ const
   // 'South'
   // 'East'
 {You can slightly adjust these to decrease bot fingerprinting}
-  MouseSpeed = (20);
-  MouseGravity = (15);
+  MouseSpeed = (18);
+  MouseGravity = (12);
   MouseWind = (3);
 
 {Rock Timer Settings}
-  LowWait = 1500;
+  LowWait = 2500;
   // Average time to mine your rock
-  HighWait = 2500;
+  HighWait = 3500;
   // 5 seconds longer than the average time to mine your rock
 {Script Settings Above– YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {}
@@ -63,7 +63,7 @@ var
   MSPoint1, MSPoint2: TPoint;
   MousePositions: Boolean;
   CurrentReactionTimes: TReactionTimes;
-  RockUpText, EmptyRockUpText: String;
+  RockUpText, EmptyRockUpText, OreUpText: String;
 
 {#######}
   ShortMinWait: Int32 = 30;
@@ -77,6 +77,55 @@ var
 procedure TKeyboard.Send(const Text: String); override;
 begin
   Self.Send(Text, Random(40, 260), Random(32, 160), Random(40, 285));
+end;
+
+function TRSInventory.ShiftDrop(slots: TIntegerArray): Boolean; override;
+var
+  boxes: TBoxArray;
+  box: TBox;
+  i, j, attempts: Int32;
+  selected: Int32;
+  circle: TCircle;
+begin
+  if (Length(slots) = 0) then
+    Exit(True);
+  IsKeyDown(VK_SHIFT);
+  // Clear cache
+  boxes := Self.GetSlotBoxes();
+  try
+    for attempts := 1 to 5 do
+    begin
+      i := 0;
+      while (i < Length(slots)) do
+      begin
+        box := boxes[slots[i]];
+        selected := Self.GetSelectedSlot();
+        if (selected > - 1) then
+        begin
+          Self.SetSelectedSlot(- 1);
+          Break;
+        end;
+        if Self.IsSlotUsed(box) then
+        begin
+          if not IsKeyDown(VK_SHIFT) then
+          begin
+            KeyDown(VK_SHIFT);
+            Wait(95, 170, wdLeft);
+            //Wait for SHIFT to be registered before the click (important).
+          end;
+          Mouse.Click(box, MOUSE_LEFT);
+          Wait(0, 99, wdLeft);
+        end;
+        Inc(i);
+      end;
+      if (i = Length(slots)) then
+        Exit;
+    end;
+  finally
+    if IsKeyDown(VK_SHIFT) then
+      KeyUp(VK_SHIFT);
+  end;
+  Result := attempts <= 5;
 end;
 
 {Replica of SetHighestPitch() but opposite}
@@ -225,6 +274,45 @@ begin
   // Exit the procedure
 end;
 
+procedure S1mpleUpTextConvert(var GlobalVar: string; Rock: Boolean);
+var
+  UpText, TempStr: string;
+  OptionsIndex, MineIndex: integer;
+begin
+  UpText := Mainscreen.GetUpText();
+  // Get the Mainscreen Up_Text
+  OptionsIndex := Pos(' /', UpText);
+  // Find the position of ' /'
+  if OptionsIndex > 0 then
+    TempStr := Copy(UpText, 1, OptionsIndex - 1)
+    // Copy from the start to just before ' /'
+  else
+    TempStr := UpText;
+  // If ' /' is not found, copy the whole string
+  if Rock then
+  begin
+    MineIndex := Pos('Mine ', TempStr);
+    // Find the position of 'Mine '
+    if MineIndex > 0 then
+      GlobalVar := Copy(TempStr, MineIndex + 5, Length(TempStr))
+      // Copy from just after 'Mine ' to the end
+    else
+      GlobalVar := TempStr;
+    // If 'Mine ' is not found, copy the whole string
+  end
+  else
+  begin
+    MineIndex := Pos(' rocks', TempStr);
+    // Find the position of ' rocks'
+    if MineIndex > 0 then
+      GlobalVar := Copy(TempStr, 6, MineIndex - 6) + ' ore'
+      // Copy from just after 'Mine ' to just before ' rocks' and add ' ore'
+    else
+      GlobalVar := TempStr;
+    // If ' rocks' is not found, copy the whole string
+  end;
+end;
+
 {Procedure to handle failsafe conditions}
 procedure S1mpleFailsafe();
 begin
@@ -262,10 +350,10 @@ begin
       exit;
   ReactionTimer.Reset();
   ReactionTimer.Start();
-  case random (12) of
-    0..4: TimerEnd := ((TimerEnd + RandomRange(1, 900000)) + ReactionTimer.ElapsedTime());
-    5..8: TimerEnd := ((TimerEnd + RandomRange(600000, 1800000)) + ReactionTimer.ElapsedTime());
-    9..10: TimerEnd := ((TimerEnd + RandomRange(1200000, 2700000)) + ReactionTimer.ElapsedTime());
+  case random(12) of
+    0 .. 4: TimerEnd := ((TimerEnd + RandomRange(1, 900000)) + ReactionTimer.ElapsedTime());
+    5 .. 8: TimerEnd := ((TimerEnd + RandomRange(600000, 1800000)) + ReactionTimer.ElapsedTime());
+    9 .. 10: TimerEnd := ((TimerEnd + RandomRange(1200000, 2700000)) + ReactionTimer.ElapsedTime());
     11: TimerEnd := ((TimerEnd + RandomRange(2100000, 3600000)) + ReactionTimer.ElapsedTime());
   end;
   hours1 := TimerEnd div 3600000;
@@ -285,17 +373,17 @@ begin
       CurrentReactionTimes.MinTime := Random(ShortMinWait);
       CurrentReactionTimes.MaxTime := CurrentReactionTimes.MinTime + Random(ShortMaxWait - ShortMinWait);
     end
-    else
-    begin
-      WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleReaction(): Slow gameplay for ', TimerEndConverted);
-      Mouse.Speed := MouseSpeed + RandomRange(- 2, 2);
-      Mouse.Gravity := MouseGravity + RandomRange(0, 4);
-      Mouse.Wind := MouseWind + RandomRange(- 2, 2);
-      Mouse.MissChance := RandomRange(10, 15);
-      PreClickOdds := 4;
-      CurrentReactionTimes.MinTime := Random(LongMinWait);
-      CurrentReactionTimes.MaxTime := CurrentReactionTimes.MinTime + Random(LongMaxWait - LongMinWait);
-    end
+  else
+  begin
+    WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleReaction(): Slow gameplay for ', TimerEndConverted);
+    Mouse.Speed := MouseSpeed + RandomRange(- 2, 2);
+    Mouse.Gravity := MouseGravity + RandomRange(0, 4);
+    Mouse.Wind := MouseWind + RandomRange(- 2, 2);
+    Mouse.MissChance := RandomRange(10, 15);
+    PreClickOdds := 4;
+    CurrentReactionTimes.MinTime := Random(LongMinWait);
+    CurrentReactionTimes.MaxTime := CurrentReactionTimes.MinTime + Random(LongMaxWait - LongMinWait);
+  end
   else
   begin
     WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleReaction(): Average gameplay  for ', TimerEndConverted);
@@ -379,17 +467,23 @@ begin
     Inventory.HoverSlotS1mple(OreSlot);
     Inventory.WaitCount(OreSlot + 1, RandomRange(LowWait, HighWait));
   end;
-  if Inventory.Count() < (OreSlot + 1) then
+  if not Inventory.ContainsItem(OreUpText) then
   begin
     S1mpleFailsafe();
-      if IsKeyDown(VK_SHIFT) then
-    KeyUp(VK_SHIFT);
+    if IsKeyDown(VK_SHIFT) then
+      KeyUp(VK_SHIFT);
     Wait(5, 16, wdLeft);
     exit;
   end
   else
     inc(RockTracker);
-  if Inventory.IsSlotUsed(OreSlot) then
+  Inventory.ShiftDrop([OreUpText, 'Uncut sapphire', 'Uncut emerald', 'Uncut ruby', 'Uncut diamond', 'Uncut opal', 'Uncut jade', 'Uncut red topaz', 'Clue geode (beginner)', 'Clue geode (easy)', 'Clue geode (medium)', 'Clue geode (hard)'], DROP_PATTERN_SNAKE);
+  Mouse.Release(MOUSE_LEFT);
+  Wait(15, 33, wdLeft);
+  if IsKeyDown(VK_SHIFT) then
+    KeyUp(VK_SHIFT);
+  Wait(5, 16, wdLeft);
+  {if Inventory.IsSlotUsed(OreSlot) then
     Inventory.ClickSlot(OreSlot);
   Mouse.Release(MOUSE_LEFT);
   Wait(15, 33, wdLeft);
@@ -401,7 +495,7 @@ begin
   if Inventory.IsSlotSelected(OreSlot) then
     Inventory.ClickSlot(OreSlot);
   if Inventory.IsSlotSelected(OreSlot + 1) then
-    Inventory.ClickSlot(OreSlot + 1);
+    Inventory.ClickSlot(OreSlot + 1);}
   exit;
 end;
 
@@ -423,12 +517,13 @@ begin
     Mouse.Move(MSPoint1);
   end;
   // Record the current up text for rock to mine
-  RockUpText := Mainscreen.GetUpText();
+  S1mpleUpTextConvert(RockUpText, True);
+  S1mpleUpTextConvert(OreUpText, False);
   Mouse.Click(MOUSE_LEFT);
   // Record the current up text for rock to mine when empty
   Inventory.WaitCount(OreSlot + 1, RandomRange(40000, 60000));
   Wait(RandomRange(432, 673));
-  EmptyRockUpText := Mainscreen.GetUpText();
+  S1mpleUpTextConvert(EmptyRockUpText, True);
   InvCount := Inventory.Count();
   Wait(RandomRange(532, 773));
   for j := 5 downto 1 do
