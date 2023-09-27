@@ -201,7 +201,7 @@ end;
 procedure S1mpleLogin();
 begin
   WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleLogin(): Running...(only if needed)');
-  Login.AddPlayer(User, Pass, Pin, []);
+  Login.AddPlayer(User, Pass);
   Login.PlayerIndex := High(Login.Players);
   if Login.IsOpen then
     Login.LoginPlayer();
@@ -449,7 +449,7 @@ begin
     BreakLengthConverted := IntToStr(hours1) + 'Hr/s ' + IntToStr(minutes1) + 'Min/s ' + IntToStr(seconds1) + 'Sec/s';
     WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleBreak(): Breaking for: ', BreakLengthConverted);
     Wait(BreakLength);
-    
+
   end;
 end;
 
