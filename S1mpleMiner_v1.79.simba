@@ -4,7 +4,7 @@ program S1mpleMiner;
 {$I WaspLib/osr.simba}
 
 const
-  Local_Version := 1.71;
+  Local_Version := 1.79;
 
 {Script Settings Below – YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {User Settings}
@@ -14,7 +14,7 @@ const
   // What username do you log in with?
   Password = '';
   // What password do you enter?
-  TurboMode = False;
+  TurboMode = True;
   // Do you want to enable turbo powermining?
   CameraAngleLow = False;
   // Do you want your view to be low or high? !!Must be the same as when you setup the script!!
@@ -25,14 +25,14 @@ const
   // 'South'
   // 'East'
 {You can slightly adjust these to decrease bot fingerprinting}
-  MouseSpeed = (21);
+  MouseSpeed = (20);
   MouseGravity = (15);
   MouseWind = (3);
 
 {Rock Timer Settings}
   LowWait = 1500;
   // Average time to mine your rock
-  HighWait = 3500;
+  HighWait = 2500;
   // 5 seconds longer than the average time to mine your rock
 {Script Settings Above– YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {}
@@ -57,17 +57,16 @@ type
   end;
 
 var
-  TimeUp, FirstLogin, Dropped: Boolean;
-  RunTimeConverted, RockTracker, OreSlot, InvCount, BreakRestrict, Failsafe, PreClickOdds: Int32;
-  RunTimer, FailsafeTimer, BreakTimer: TStopWatch;
+  TimeUp, FirstLogin, Reacted: Boolean;
+  RunTimeConverted, RockTracker, OreSlot, InvCount, BreakRestrict, Failsafe, PreClickOdds, TimerEnd: Int32;
+  RunTimer, FailsafeTimer, BreakTimer, ReactionTimer: TStopWatch;
   MSPoint1, MSPoint2: TPoint;
   MousePositions: Boolean;
-  CurrentBlockEnd: TDateTime;
   CurrentReactionTimes: TReactionTimes;
   RockUpText, EmptyRockUpText: String;
 
 {#######}
-  ShortMinWait: Int32 = 16;
+  ShortMinWait: Int32 = 30;
   ShortMaxWait: Int32 = 86;
   LongMinWait: Int32 = 66;
   LongMaxWait: Int32 = 156;
@@ -254,64 +253,62 @@ end;
 {Procedure to calculate reaction times}
 procedure S1mpleReaction(out ReactionTimes: TReactionTimes);
 var
-  CurrentTime, BlockLength: UInt64;
+  hours1, minutes1, seconds1: UInt64;
+  RandomChance: Double;
+  TimerEndConverted: String;
 begin
-  // Get the current time in milliseconds
-  CurrentTime := RunTimer.ElapsedTime();
-  // If the current time is within the current block
-  if (CurrentTime < CurrentBlockEnd) then
-  begin
-    // Use the current reaction times
-    ReactionTimes := CurrentReactionTimes;
-    Exit;
-    // Exit the procedure
+  if Reacted = True then
+    if ReactionTimer.ElapsedTime() < TimerEnd then
+      exit;
+  ReactionTimer.Reset();
+  ReactionTimer.Start();
+  case random (12) of
+    0..4: TimerEnd := ((TimerEnd + RandomRange(1, 900000)) + ReactionTimer.ElapsedTime());
+    5..8: TimerEnd := ((TimerEnd + RandomRange(600000, 1800000)) + ReactionTimer.ElapsedTime());
+    9..10: TimerEnd := ((TimerEnd + RandomRange(1200000, 2700000)) + ReactionTimer.ElapsedTime());
+    11: TimerEnd := ((TimerEnd + RandomRange(2100000, 3600000)) + ReactionTimer.ElapsedTime());
   end;
-  WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleReaction(): Running');
-  // Calculate the length of the next block based on a random number (converted to milliseconds)
-  case Random(5) of
-    0: BlockLength := RandomRange(5 * 60000, 6 * 60000);
-    1: BlockLength := RandomRange(15 * 60000, 16 * 60000);
-    2: BlockLength := RandomRange(30 * 60000, 31 * 60000);
-    3: BlockLength := RandomRange(60 * 60000, 61 * 60000);
-    else
-      BlockLength := RandomRange(180 * 60000, 181 * 60000);
-  end;
-  // Calculate the end of the next block
-  CurrentBlockEnd := RunTimer.ElapsedTime() + BlockLength;
-  // Calculate the minimum and maximum reaction times based on the length of the block and a random number
-  if (BlockLength < 16 * 60000) then
-    if (Random > 0.5) then
+  hours1 := TimerEnd div 3600000;
+  minutes1 := (TimerEnd mod 3600000) div 60000;
+  seconds1 := ((TimerEnd mod 3600000) mod 60000) div 1000;
+  TimerEndConverted := IntToStr(hours1) + 'Hr/s ' + IntToStr(minutes1) + 'Min/s ' + IntToStr(seconds1) + 'Sec/s';
+  RandomChance := Random;
+  if TimerEnd < 1800000 then
+    if (RandomChance < 0.6) then
     begin
+      WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleReaction(): Fast gameplay for ', TimerEndConverted);
       Mouse.Speed := MouseSpeed + RandomRange(- 1, 3);
       Mouse.Gravity := MouseGravity + RandomRange(- 3, 1);
       Mouse.Wind := MouseWind + RandomRange(- 2, 2);
-      Mouse.MissChance := RandomRange(5, 15);
+      Mouse.MissChance := RandomRange(5, 10);
       PreClickOdds := 9;
       CurrentReactionTimes.MinTime := Random(ShortMinWait);
       CurrentReactionTimes.MaxTime := CurrentReactionTimes.MinTime + Random(ShortMaxWait - ShortMinWait);
     end
+    else
+    begin
+      WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleReaction(): Slow gameplay for ', TimerEndConverted);
+      Mouse.Speed := MouseSpeed + RandomRange(- 2, 2);
+      Mouse.Gravity := MouseGravity + RandomRange(0, 4);
+      Mouse.Wind := MouseWind + RandomRange(- 2, 2);
+      Mouse.MissChance := RandomRange(10, 15);
+      PreClickOdds := 4;
+      CurrentReactionTimes.MinTime := Random(LongMinWait);
+      CurrentReactionTimes.MaxTime := CurrentReactionTimes.MinTime + Random(LongMaxWait - LongMinWait);
+    end
   else
   begin
-    Mouse.Speed := MouseSpeed + RandomRange(- 2, 2);
-    Mouse.Gravity := MouseGravity + RandomRange(0, 4);
-    Mouse.Wind := MouseWind + RandomRange(- 2, 2);
-    Mouse.MissChance := RandomRange(15, 25);
-    PreClickOdds := 4;
-    CurrentReactionTimes.MinTime := Random(LongMinWait);
-    CurrentReactionTimes.MaxTime := CurrentReactionTimes.MinTime + Random(LongMaxWait - LongMinWait);
-  end
-  else
-  begin
+    WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleReaction(): Average gameplay  for ', TimerEndConverted);
     Mouse.Speed := MouseSpeed + RandomRange(- 2, 2);
     Mouse.Gravity := MouseGravity + RandomRange(- 2, 2);
     Mouse.Wind := MouseWind + RandomRange(- 2, 2);
-    Mouse.MissChance := RandomRange(10, 20);
+    Mouse.MissChance := RandomRange(5, 15);
     PreClickOdds := 7;
     CurrentReactionTimes.MinTime := Random(AvgMinWait);
     CurrentReactionTimes.MaxTime := CurrentReactionTimes.MinTime + Random(AvgMaxWait - AvgMinWait);
   end;
-  // Use the calculated reaction times
   ReactionTimes := CurrentReactionTimes;
+  Reacted := True;
 end;
 
 {Procedure to wait for a random duration based on calculated reaction times}
@@ -374,6 +371,9 @@ begin
   if not Inventory.IsOpen then
     Inventory.Open;
   WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleDrop(): Running');
+  IsKeyDown(VK_SHIFT);
+  KeyDown(VK_SHIFT);
+  Wait(90, 160, wdLeft);
   if not Inventory.IsSlotUsed(OreSlot) then
   begin
     Inventory.HoverSlotS1mple(OreSlot);
@@ -382,30 +382,26 @@ begin
   if Inventory.Count() < (OreSlot + 1) then
   begin
     S1mpleFailsafe();
+      if IsKeyDown(VK_SHIFT) then
+    KeyUp(VK_SHIFT);
+    Wait(5, 16, wdLeft);
     exit;
   end
   else
     inc(RockTracker);
-  KeyDown(VK_SHIFT);
-  S1mpleReactionWait();
   if Inventory.IsSlotUsed(OreSlot) then
-  begin
     Inventory.ClickSlot(OreSlot);
-    if Inventory.IsSlotSelected(OreSlot) then
-      Inventory.ClickSlot(OreSlot);
-    Dropped := True;
-  end;
+  Mouse.Release(MOUSE_LEFT);
+  Wait(15, 33, wdLeft);
   if Inventory.IsSlotUsed(OreSlot + 1) then
-  begin
-    S1mpleReactionWait();
     Inventory.ClickSlot(OreSlot + 1);
-    if Inventory.IsSlotSelected(OreSlot + 1) then
-      Inventory.ClickSlot(OreSlot + 1);
-  end;
-  KeyUp(VK_SHIFT);
-  Wait(33, 77, wdLeft);
-  if IsKeyDown(VK_Shift) then
-    KeyUP(VK_SHIFT);
+  if IsKeyDown(VK_SHIFT) then
+    KeyUp(VK_SHIFT);
+  Wait(5, 16, wdLeft);
+  if Inventory.IsSlotSelected(OreSlot) then
+    Inventory.ClickSlot(OreSlot);
+  if Inventory.IsSlotSelected(OreSlot + 1) then
+    Inventory.ClickSlot(OreSlot + 1);
   exit;
 end;
 
@@ -489,9 +485,11 @@ begin
   else
   begin
     if Inventory.IsSlotSelected(OreSlot) then
-      Inventory.ClickSlot(OreSlot);
-    S1mpleFailsafe();
-    exit;
+    begin
+      S1mpleDrop();
+      S1mpleFailsafe();
+      exit;
+    end;
   end;
   if Mainscreen.IsUpText(EmptyRockUpText) or Mainscreen.IsUpText(RockUpText) then
   begin
@@ -516,9 +514,11 @@ begin
   else
   begin
     if Inventory.IsSlotSelected(OreSlot) then
-      Inventory.ClickSlot(OreSlot);
-    S1mpleFailsafe();
-    exit;
+    begin
+      S1mpleDrop();
+      S1mpleFailsafe();
+      exit;
+    end;
   end;
   WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleMiner: Total ', (RockUpText), ' mined: ', (RockTracker));
   exit;
@@ -532,11 +532,13 @@ begin
   WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleSetup(): Running');
   FirstLogin := True;
   MousePositions := False;
+  Reacted := False;
   BreakTimer.Start();
+  ReactionTimer.Start();
   BreakRestrict := RandomRange(3600000, 5400000);
-  S1mpleReactionWait();
   ClearDebug();
   S1mplePaint();
+  S1mpleReactionWait();
   RunTimeConverted := (RunTimeMinutes * 60000 + RandomRange(- 10000, 10000));
   RunTimer.Start;
 end;
