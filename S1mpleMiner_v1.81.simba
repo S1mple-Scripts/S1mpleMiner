@@ -12,7 +12,7 @@ const
   // How long should the script run for?
   User = '';
   // What username do you log in with?
-  Password = '';
+  Pass = '';
   // What password do you enter?
   TurboMode = True;
   // Do you want to enable turbo powermining?
@@ -25,9 +25,9 @@ const
   // 'South'
   // 'East'
 {You can slightly adjust these to decrease bot fingerprinting}
-  MouseSpeed = (18);
-  MouseGravity = (12);
-  MouseWind = (3);
+  MouseSpeed = (21);
+  MouseGravity = (14);
+  MouseWind = (4);
 
 {Rock Timer Settings}
   LowWait = 2500;
@@ -201,7 +201,8 @@ end;
 procedure S1mpleLogin();
 begin
   WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleLogin(): Running...(only if needed)');
-  Login.AddPlayer(User, Password);
+  Login.AddPlayer(User, Pass, Pin, []);
+  Login.PlayerIndex := High(Login.Players);
   if Login.IsOpen then
     Login.LoginPlayer();
   if not Inventory.IsOpen then
