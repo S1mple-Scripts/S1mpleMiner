@@ -441,13 +441,14 @@ begin
       // up to 30 minutes in milliseconds
       BreakLength := BreakLength + RandomFactor;
     end;
-    //Logout.ClickLogout;
+    Logout.ClickLogout;
     hours1 := BreakLength div 3600000;
     minutes1 := (BreakLength mod 3600000) div 60000;
     seconds1 := ((BreakLength mod 3600000) mod 60000) div 1000;
     BreakLengthConverted := IntToStr(hours1) + 'Hr/s ' + IntToStr(minutes1) + 'Min/s ' + IntToStr(seconds1) + 'Sec/s';
     WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleBreak(): Breaking for: ', BreakLengthConverted);
     Wait(BreakLength);
+    
   end;
 end;
 
