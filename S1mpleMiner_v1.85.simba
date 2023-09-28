@@ -4,7 +4,7 @@ program S1mpleMiner;
 {$I WaspLib/osr.simba}
 
 const
-  Local_Version := 1.81;
+  Local_Version := 1.85;
 
 {Script Settings Below – YOU MUST SET THESE FOR THE SCRIPT TO WORK PROPERLY!}
 {User Settings}
@@ -83,9 +83,8 @@ function TRSInventory.ShiftDrop(slots: TIntegerArray): Boolean; override;
 var
   boxes: TBoxArray;
   box: TBox;
-  i, j, attempts: Int32;
+  i, attempts: Int32;
   selected: Int32;
-  circle: TCircle;
 begin
   if (Length(slots) = 0) then
     Exit(True);
@@ -157,9 +156,9 @@ begin
       // % chance to miss the slot
       begin
         // Generate a point near the slot to move to
-        MissedPoint.x := SlotBox.x1 + RandomRange(- 3, 5);
+        MissedPoint.x := SlotBox.x1 + RandomRange(- 5, 10);
         // Adjust the range as needed
-        MissedPoint.y := SlotBox.y1 + RandomRange(- 3, 5);
+        MissedPoint.y := SlotBox.y1 + RandomRange(- 5, 10);
         // Adjust the range as needed
         Mouse.Move(MissedPoint);
         // Retry with a greater chance to succeed
@@ -255,7 +254,7 @@ var
   RunChance: Double;
   // Variable to store the random chance value
 begin
-  RunChance := Random;
+  RunChance := Random();
   // Generate a random number between 0 and 1
   // If the generated random number is less than or equal to the specified chance
   if RunChance <= Chance then
@@ -274,6 +273,58 @@ begin
   exit;
   // Exit the procedure
 end;
+
+procedure S1mpleLoseFocus(MinWait, MaxWait: Integer; Chance: Double; Side: String);
+var
+  ClientWidth, ClientHeight: Integer;
+  RandNum: Double;
+  Mousey: TPoint;
+begin
+  // Generate a random number between 0 and 1
+  RandNum := Random;
+  // Only execute the mouse movement if the random number is less than or equal to the chance
+  if RandNum <= chance then
+  begin
+    // Get the client bounds
+    ClientWidth := GetClientBounds().Width();
+    ClientHeight := GetClientBounds().Height();
+    // Get the current mouse position
+    Mousey := Mouse.Position();
+    // Move the mouse off the specified side of the client
+    if Side = 'left' then
+    begin
+      Mousey.x := 0;
+      Mousey.y := RandomRange(0, ClientHeight);
+      // Add vertical randomness
+      Mouse.Move(Mousey);
+    end
+    else if Side = 'right' then
+    begin
+      Mousey.x := ClientWidth;
+      Mousey.y := RandomRange(0, ClientHeight);
+      // Add vertical randomness
+      Mouse.Move(Mousey);
+    end
+    else if Side = 'top' then
+    begin
+      Mousey.y := 0;
+      Mousey.x := RandomRange(0, ClientWidth);
+      // Add horizontal randomness
+      Mouse.Move(Mousey);
+    end
+    else if Side = 'bottom' then
+    begin
+      Mousey.y := ClientHeight;
+      Mousey.x := RandomRange(0, ClientWidth);
+      // Add horizontal randomness
+      Mouse.Move(Mousey);
+    end;
+    // Generate a larger random vertical movement while the mouse is off the client
+    Mouse.Move(Mousey.x, Mousey.y);
+    // Wait for a random time between minWait and maxWait
+    Wait(RandomRange(MinWait, MaxWait));
+  end;
+end; 
 
 procedure S1mpleUpTextConvert(var GlobalVar: string; Rock: Boolean);
 var
@@ -461,10 +512,11 @@ begin
   if not Inventory.IsOpen then
     Inventory.Open;
   WriteLn([(SRL.TimeRunning(Time_Abbrev))], 'S1mpleDrop(): Running');
+    S1mpleLoseFocus(0, 60000, 0.03, 'right');
   IsKeyDown(VK_SHIFT);
   KeyDown(VK_SHIFT);
   Wait(90, 160, wdLeft);
-  if not Inventory.IsSlotUsed(OreSlot) then
+  if not Inventory.ContainsItem(OreUpText) then
   begin
     Inventory.HoverSlotS1mple(OreSlot);
     Inventory.WaitCount(OreSlot + 1, RandomRange(LowWait, HighWait));
@@ -485,19 +537,6 @@ begin
   if IsKeyDown(VK_SHIFT) then
     KeyUp(VK_SHIFT);
   Wait(5, 16, wdLeft);
-  {if Inventory.IsSlotUsed(OreSlot) then
-    Inventory.ClickSlot(OreSlot);
-  Mouse.Release(MOUSE_LEFT);
-  Wait(15, 33, wdLeft);
-  if Inventory.IsSlotUsed(OreSlot + 1) then
-    Inventory.ClickSlot(OreSlot + 1);
-  if IsKeyDown(VK_SHIFT) then
-    KeyUp(VK_SHIFT);
-  Wait(5, 16, wdLeft);
-  if Inventory.IsSlotSelected(OreSlot) then
-    Inventory.ClickSlot(OreSlot);
-  if Inventory.IsSlotSelected(OreSlot + 1) then
-    Inventory.ClickSlot(OreSlot + 1);}
   exit;
 end;
 
@@ -572,7 +611,7 @@ begin
       Mouse.Click(MOUSE_LEFT);
       if Mainscreen.DidRedClick then
       begin
-        S1mpleRandomMouse(- 20, 22, 0, 112, 0.1);
+        S1mpleRandomMouse(- 50, 52, 0, 5412, 0.133);
         S1mpleReactionWait();
         S1mpleDrop();
         Mouse.Move(RandomPoint2);
@@ -602,7 +641,7 @@ begin
       Mouse.Click(MOUSE_LEFT);
       if Mainscreen.DidRedClick then
       begin
-        S1mpleRandomMouse(- 20, 22, 0, 112, 0.1);
+        S1mpleRandomMouse(- 50, 52, 0, 5412, 0.133);
         S1mpleReactionWait();
         S1mpleDrop();
       end;
